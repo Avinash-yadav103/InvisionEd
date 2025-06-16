@@ -39,4 +39,7 @@
 * **SpeechRecognition**, **pyaudio**
 
 
+![image](https://github.com/user-attachments/assets/0096e301-5462-4761-956e-36ac0a455f1b)
+![image](https://github.com/user-attachments/assets/318e7524-50a8-487d-ae7d-4fb4344dc967)
+
 
