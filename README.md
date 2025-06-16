@@ -4,9 +4,9 @@
 
 ##  Features
 
-- **Voice-Controlled Navigation**: Use voice commands to go through, summarise and ask questions regarding the PDF content.
-- **Multi-Language Support**: Read PDFs in multiple languages, including Hindi and English and many more languages to come.
-- **Text Summarization**: Get concise summaries of long PDF documents using NLP-based models.
+- **Voice-Controlled Navigation**: Use voice commands to go through, summarise and ask questions regarding the content.
+- **Multi-Language Support**: Read PDFs and images both textual and scanned in multiple languages, including Hindi and English and many more languages to come.
+- **Text Summarization**: Get concise summaries of long documents using NLP-based models.
 - **Offline Functionality**: Works in hybrid mode, making it suitable for use in low-connectivity environments.
 - **Text-to-Speech (TTS)**: Converts text to speech using offline TTS engines.
 - **Speech-to-Text (STT)**: Interact with the app using your voice, powered by VOSK .
