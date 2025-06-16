@@ -2,6 +2,8 @@
 
 **InVisionEd** is an offline, voice-controlled education platform designed to make reading and comprehension more accessible and efficient. With multi-language support and summarization and can even ask questions realted to the material, this tool is ideally built to help out **visually challenged** community of students, researchers, who want a hands-free, intelligent and dignified experience in their academics.
 
+# Figma (UI) Link: https://www.figma.com/design/WwlIIkgbhA9O8Nmd076v0z/Untitled?node-id=0-1&t=7VHmCN0vK1MYTvGM-1
+
 ##  Features
 
 - **Voice-Controlled Navigation**: Use voice commands to go through, summarise and ask questions regarding the content.
