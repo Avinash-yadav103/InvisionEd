@@ -1,6 +1,6 @@
 # InVisionEd
 
-**InVisionEd** is an offline, voice-controlled assistant designed to make reading and comprehension more accessible and efficient. With multi-language support and summarization and can even ask questions realted to the material, this tool is ideally built to help out **visually challenged** community of students, researchers, who want a hands-free, intelligent and dignified experience in their academics.
+**InVisionEd** is an offline, voice-controlled education platform designed to make reading and comprehension more accessible and efficient. With multi-language support and summarization and can even ask questions realted to the material, this tool is ideally built to help out **visually challenged** community of students, researchers, who want a hands-free, intelligent and dignified experience in their academics.
 
 ##  Features
 
