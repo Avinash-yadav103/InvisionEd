@@ -4,6 +4,7 @@
 
 # Figma (UI) Link: https://www.figma.com/design/WwlIIkgbhA9O8Nmd076v0z/Untitled?node-id=0-1&t=7VHmCN0vK1MYTvGM-1
 
+# Video demo Link: https://drive.google.com/file/d/1iprR2k39EV48AooN3BG1-k_h-reYvI7w/view?usp=sharing
 ##  Features
 
 - **Voice-Controlled Navigation**: Use voice commands to go through, summarise and ask questions regarding the content.
