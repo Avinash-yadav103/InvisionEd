@@ -1,0 +1,4 @@
+{
+  "/api/read-aloud/route": "app/api/read-aloud/route.js",
+  "/page": "app/page.js"
+}

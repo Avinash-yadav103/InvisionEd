@@ -75,7 +75,7 @@ def process_file(file_path):
 
 # === Example Usage ===
 if __name__ == "__main__":
-    file_path = "image.png"
+    file_path = r"C:\Users\avina\Desktop\Main\cOOntent\ClientProjects\ShubhaIsChewtiya\InvisionEd\backend\Content.pdf"
     if os.path.exists(file_path):
         process_file(file_path)
     else:
