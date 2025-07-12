@@ -1,11 +1,75 @@
 "use client"
 
 import type React from "react"
-import type SpeechRecognition from "speech-recognition"
 import { useState, useEffect, useRef } from "react"
 import { Upload, Mic, MicOff, Sun, Moon, FileText, Sparkles, User, Bot, Send, BookOpen, Volume2, BookOpenCheck, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AudioPlayer } from "@/components/AudioPlayer";
+
+// Define proper types for Web Speech API
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+  interpretation: any;
+  emma: any;
+}
+
+interface SpeechRecognitionResult {
+  readonly isFinal: boolean;
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  grammars: SpeechGrammarList;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onaudioend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onaudiostart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null;
+  onnomatch: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+  onsoundend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onsoundstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onspeechend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onspeechstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+// Add missing global types
+declare global {
+  interface Window {
+    SpeechRecognition: {
+      new (): SpeechRecognition;
+    };
+    webkitSpeechRecognition: {
+      new (): SpeechRecognition;
+    };
+  }
+}
 
 interface ChatMessage {
   id: number
@@ -53,8 +117,8 @@ export default function InVisionEdInterface() {
   // Initialize speech recognition
   useEffect(() => {
     if (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-      recognitionRef.current = new SpeechRecognition()
+      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
+      recognitionRef.current = new SpeechRecognitionAPI()
 
       if (recognitionRef.current) {
         recognitionRef.current.continuous = false
@@ -65,7 +129,7 @@ export default function InVisionEdInterface() {
           setIsListening(true)
         }
 
-        recognitionRef.current.onresult = (event) => {
+        recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
           const transcript = event.results[0][0].transcript
           handleSendMessage(transcript)
         }
@@ -74,7 +138,7 @@ export default function InVisionEdInterface() {
           setIsListening(false)
         }
 
-        recognitionRef.current.onerror = (event) => {
+        recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
           console.error("Speech recognition error:", event.error)
           setIsListening(false)
         }
@@ -202,6 +266,7 @@ export default function InVisionEdInterface() {
   // Add new handler functions
   const handleSummarize = async () => {
     setIsSummarizing(true);
+    
     try {
       const response = await fetch('/api/summarize-text');
       
@@ -380,7 +445,107 @@ export default function InVisionEdInterface() {
         clearInterval(statusCheckInterval);
       }
     };
-  }, [isReading, setChatMessages]);
+  }, [isReading]);
+
+  // Use environment variable for API key instead of hardcoding
+  const summarizeWithGeminiDirect = async (text: string): Promise<string> => {
+    try {
+      // Use environment variable for API key - should be defined in .env.local
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      
+      if (!apiKey) {
+        throw new Error('Missing API key');
+      }
+      
+      const prompt = `Please provide a concise, well-structured summary of the following text extracted from a document. Focus on the key points, main arguments, and conclusions.\n\nTEXT:\n"""\n${text.substring(0, 30000)}\n"""`;
+      
+      interface GeminiMessage {
+        role: string;
+        parts: {text: string}[];
+      }
+      
+      let chatHistory: GeminiMessage[] = [{ role: "user", parts: [{ text: prompt }] }];
+      const payload = { contents: chatHistory };
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `API request failed with status ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.candidates && result.candidates.length > 0 && result.candidates[0].content.parts[0].text) {
+        return result.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error('No valid content received from API.');
+      }
+    } catch (error) {
+      console.error('Error calling Gemini API directly:', error);
+      throw error;
+    }
+  };
+
+  // Add this function to implement Q&A functionality
+  const handleAskQuestion = async (question: string) => {
+    if (!question.trim()) return;
+    
+    setIsTyping(true);
+    
+    try {
+      // Get the document text from the most recent AI message
+      const documentText = chatMessages
+        .filter(msg => msg.type === "ai" && msg.message.includes("I've analyzed your file"))
+        .pop()?.message.split("found:\n\n")[1] || "";
+      
+      if (!documentText) {
+        throw new Error("No document content found to answer questions about.");
+      }
+      
+      // Create user question message
+      const userMessage: ChatMessage = {
+        id: Date.now(),
+        type: "user",
+        message: question.trim(),
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }
+      setChatMessages((prev) => [...prev, userMessage]);
+      
+      // Use Gemini API directly for Q&A
+      const prompt = `Based on the following document text, provide a clear and concise answer to the user's question. If the answer isn't in the text, say that you cannot find the answer in the provided document.\n\nDOCUMENT TEXT:\n"""\n${documentText.substring(0, 30000)}\n"""\n\nUSER'S QUESTION:\n"${question}"`;
+      
+      const answer = await summarizeWithGeminiDirect(prompt);
+      
+      // Create AI answer message
+      const aiMessage: ChatMessage = {
+        id: Date.now() + 1,
+        type: "ai",
+        message: answer,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }
+      setChatMessages((prev) => [...prev, aiMessage]);
+      
+    } catch (error) {
+      console.error('Error answering question:', error);
+      
+      // Add error message
+      const errorMessage: ChatMessage = {
+        id: Date.now() + 1,
+        type: "ai",
+        message: "I'm sorry, I couldn't answer your question about the document. Please try again.",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }
+      setChatMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
+  }
 
   return (
     <div
@@ -486,6 +651,25 @@ export default function InVisionEdInterface() {
                 </div>
               )}
             </div>
+
+            {/* Ask Question Button - Placed with file selection UI */}
+            {selectedFile && (
+              <Button 
+                onClick={() => {
+                  const question = prompt("What would you like to know about this document?");
+                  if (question) handleAskQuestion(question);
+                }}
+                size="sm"
+                variant="outline"
+                className={`flex items-center space-x-1 text-xs ${
+                  isDarkMode ? "bg-purple-600 hover:bg-purple-700 text-white" : "bg-purple-500 hover:bg-purple-600 text-white"
+                }`}
+                disabled={isTyping}
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                Ask Question
+              </Button>
+            )}
           </div>
         </div>
 

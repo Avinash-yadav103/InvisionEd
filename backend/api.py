@@ -473,17 +473,20 @@ def adjust_volume_route():
 
 # Make sure you have this function for summarization
 def summarize_text(text):
-    """Use Gemini API to summarize text"""
+    """Use Gemini API to generate a short context summary of text"""
     try:
         model = genai.GenerativeModel('gemini-pro')
+        # Modified prompt to request a shorter, more contextual summary
         response = model.generate_content(
-            f"Please summarize the following text concisely:\n\n{text}"
+            "Create a brief context overview (2-3 sentences) that captures the core subject "
+            "and main focus of the following text. Don't include specific details, just help "
+            "the reader understand what this document is about:\n\n" + text[:30000]
         )
         return response.text
     except Exception as e:
         print(f"Error in summarization: {e}")
-        return f"Failed to summarize text: {str(e)}"
-
+        return f"Failed to generate document context: {str(e)}"
+    
 @app.route('/summarize-and-read', methods=['GET'])
 def summarize_and_read_route():
     """API endpoint to summarize text and read it aloud"""
