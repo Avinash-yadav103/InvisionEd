@@ -16,20 +16,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/process-file/route.js"
     ],
-    "/api/summarize-and-read/route": [
+    "/api/read-aloud/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/summarize-and-read/route.js"
+      "static/chunks/app/api/read-aloud/route.js"
+    ],
+    "/api/reading-status/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/reading-status/route.js"
+    ],
+    "/api/stop-reading/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/stop-reading/route.js"
     ],
     "/api/summarize-text/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/summarize-text/route.js"
     ],
-    "/api/read-aloud/route": [
+    "/api/summarize-and-read/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/read-aloud/route.js"
+      "static/chunks/app/api/summarize-and-read/route.js"
     ]
   }
 }

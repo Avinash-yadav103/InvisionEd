@@ -3,8 +3,9 @@
 import type React from "react"
 import type SpeechRecognition from "speech-recognition"
 import { useState, useEffect, useRef } from "react"
-import { Upload, Mic, MicOff, Sun, Moon, FileText, Sparkles, User, Bot, Send, BookOpen, Volume2, BookOpenCheck } from "lucide-react"
+import { Upload, Mic, MicOff, Sun, Moon, FileText, Sparkles, User, Bot, Send, BookOpen, Volume2, BookOpenCheck, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { AudioPlayer } from "@/components/AudioPlayer";
 
 interface ChatMessage {
   id: number
@@ -235,13 +236,20 @@ export default function InVisionEdInterface() {
   }
 
   const handleReadAloud = async () => {
+    // If already reading, don't start another request
+    if (isReading) return;
+    
     setIsReading(true);
     try {
+      console.log("Sending read-aloud request");
       const response = await fetch('/api/read-aloud');
       
       if (!response.ok) {
-        throw new Error('Failed to read text aloud');
+        throw new Error(`Failed to read text aloud: ${response.status}`);
       }
+      
+      const data = await response.json();
+      console.log("Read aloud response:", data);
       
       // Add AI message about reading
       const aiMessage: ChatMessage = {
@@ -262,7 +270,6 @@ export default function InVisionEdInterface() {
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       }
       setChatMessages((prev) => [...prev, errorMessage]);
-    } finally {
       setIsReading(false);
     }
   }
@@ -303,6 +310,77 @@ export default function InVisionEdInterface() {
       setIsReading(false);
     }
   }
+
+  // Add a new handler function to stop reading
+  const handleStopReading = async () => {
+    try {
+      const response = await fetch('/api/stop-reading');
+      
+      if (!response.ok) {
+        throw new Error('Failed to stop reading');
+      }
+      
+      // Add AI message about stopping the reading
+      const aiMessage: ChatMessage = {
+        id: Date.now(),
+        type: "ai",
+        message: "I've stopped reading the document.",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }
+      setChatMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error stopping reading:', error);
+    } finally {
+      setIsReading(false);
+    }
+  }
+
+  // Add a polling mechanism to check reading status
+  useEffect(() => {
+    let statusCheckInterval: NodeJS.Timeout | null = null;
+    
+    // Start polling when reading starts
+    if (isReading) {
+      console.log("Starting status check polling");
+      statusCheckInterval = setInterval(async () => {
+        try {
+          const response = await fetch('/api/reading-status');
+          if (!response.ok) {
+            console.error('Error response from reading status:', response.status);
+            return;
+          }
+          
+          const data = await response.json();
+          console.log("Reading status:", data.is_reading);
+          
+          // If backend says we're not reading anymore, update UI
+          if (!data.is_reading && isReading) {
+            console.log("Reading completed according to backend");
+            setIsReading(false);
+            
+            // Add a message that reading has completed
+            const aiMessage: ChatMessage = {
+              id: Date.now(),
+              type: "ai",
+              message: "I've finished reading the document.",
+              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            }
+            setChatMessages((prev) => [...prev, aiMessage]);
+          }
+        } catch (error) {
+          console.error('Error checking reading status:', error);
+        }
+      }, 2000); // Check every 2 seconds
+    }
+    
+    // Cleanup interval when component unmounts or reading stops
+    return () => {
+      if (statusCheckInterval) {
+        console.log("Clearing status check interval");
+        clearInterval(statusCheckInterval);
+      }
+    };
+  }, [isReading, setChatMessages]);
 
   return (
     <div
@@ -514,16 +592,29 @@ export default function InVisionEdInterface() {
                       </Button>
                       
                       <Button
-                        onClick={handleReadAloud}
+                        onClick={isReading ? handleStopReading : handleReadAloud}
                         size="sm"
-                        variant="outline"
+                        variant={isReading ? "destructive" : "outline"}
                         className={`flex items-center space-x-1 text-xs ${
-                          isDarkMode ? "bg-gray-800 border-gray-700 hover:bg-gray-700" : "bg-white border-gray-300 hover:bg-gray-50"
+                          isReading 
+                            ? "bg-red-500 hover:bg-red-600 text-white"
+                            : isDarkMode 
+                              ? "bg-gray-800 border-gray-700 hover:bg-gray-700" 
+                              : "bg-white border-gray-300 hover:bg-gray-50"
                         }`}
-                        disabled={isReading}
+                        disabled={isSummarizing} // Only disable when summarizing, not when reading
                       >
-                        <Volume2 className="w-3 h-3 mr-1" />
-                        {isReading ? "Reading..." : "Read Aloud"}
+                        {isReading ? (
+                          <>
+                            <Square className="w-3 h-3 mr-1" />
+                            Stop Reading
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="w-3 h-3 mr-1" />
+                            Read Aloud
+                          </>
+                        )}
                       </Button>
                       
                       <Button
@@ -609,6 +700,15 @@ export default function InVisionEdInterface() {
       <footer className={`py-2 text-center border-t ${isDarkMode ? "border-gray-700" : "border-gray-300"}`}>
         <p className="text-xs opacity-70">© 2025 InVisionEd | Designed with inclusion in heart</p>
       </footer>
+
+      {/* Audio Player Popup - Only shown when reading is active */}
+      {isReading && (
+        <AudioPlayer 
+          isPlaying={isReading}
+          onStop={handleStopReading}
+          isDarkMode={isDarkMode}
+        />
+      )}
     </div>
   )
 }
