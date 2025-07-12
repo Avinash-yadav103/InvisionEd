@@ -32,14 +32,35 @@
 
 3. Listen as the app reads and summarizes your document!
 
+
+## How InVisionEd Functions (Step-by-Step):
+<img width="856" height="768" alt="Picture1" src="https://github.com/user-attachments/assets/348dc066-ee83-4e50-a39c-b0dd6305fa6b" />
+
+1. User gives a voice command, such as:
+   “Open file”, “Read from page 3”, or “Summarize this chapter”
+2. Speech-to-Text (STT) converts the spoken command into text using VOSK
+3. The app opens the selected file (PDF or image) provided by the user
+4. If it’s a scanned document or image, OCR extracts the text using Tesseract
+5. Based on the command:
+   For “read” → The text is read aloud using Text-to-Speech (TTS)
+   For “summarize” → AI generates a short summary using NLP
+6. The output (text or summary) is then spoken aloud, creating a hands-free learning    experience
+7. All interaction is done via voice or text as per user demand, making it              accessible and easy to use
+
 ##  Technologies Used
 
 * **Python**
 * **VOSK** (Offline speech recognition)
 * **Pyttsx3** or **gTTS** (Text-to-Speech)
 * **PyMuPDF / PyPDF2** (PDF parsing)
-* **Transformers / BART / T5** (Summarization)
 * **SpeechRecognition**, **pyaudio**
+
+## Ideal Users:
+
+1. Visually impaired or low-vision learners
+2. Students preparing for competitive exams like UPSC, NEET, JEE
+3. Learners in rural areas with limited access to Braille or support systems
+4. Anyone seeking hands-free learning
 
 
 ![image](https://github.com/user-attachments/assets/0096e301-5462-4761-956e-36ac0a455f1b)
