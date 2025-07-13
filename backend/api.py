@@ -15,7 +15,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Configure Gemini API
-GOOGLE_API_KEY = "AIzaSyCK3hk8fVMkzF9NrL2-nRLCBeZZ2CtpB_0"
+GOOGLE_API_KEY = "AIzaSyC8EHY_xcWwh600B9pvtYX2maXkXV--BiQ"
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Store extracted text for current session
@@ -387,16 +387,39 @@ def process_file():
 
 @app.route('/summarize-text', methods=['GET'])
 def summarize_text_route():
-    if not session_data["current_text"]:
-        return jsonify({"error": "No text has been extracted yet"}), 400
-    
-    summary = summarize_text(session_data["current_text"])
-    
-    return jsonify({
-        "summary": summary,
-        "original_text": session_data["current_text"],
-        "filename": session_data["current_filename"]
-    })
+    try:
+        if not session_data["current_text"]:
+            return jsonify({"error": "No text has been extracted yet"}), 400
+        
+        # Use a more specific prompt similar to the JS version
+        model = genai.GenerativeModel('gemini-pro')
+        prompt = f"""Please provide a concise, well-structured summary of the following text extracted from a PDF. 
+Focus on the key points, main arguments, and conclusions. Use markdown for formatting if appropriate.
+
+TEXT:
+\"\"\"
+{session_data["current_text"][:30000]}
+\"\"\"
+"""
+        
+        response = model.generate_content(prompt)
+        summary = response.text
+        
+        return jsonify({
+            "summary": summary,
+            "filename": session_data["current_filename"],
+            "status": "success"
+        })
+    except Exception as e:
+        # Log the full exception for debugging
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in summarization: {e}\n{error_details}")
+        
+        return jsonify({
+            "error": f"Failed to generate summary: {str(e)}",
+            "status": "error"
+        }), 500
 
 @app.route('/read-aloud', methods=['GET'])
 def read_aloud_route():
@@ -503,6 +526,25 @@ def summarize_and_read_route():
         "message": "Reading summary aloud" if success else "Summary created but reading already in progress",
         "status": "started" if success else "queued"
     })
+
+@app.route('/test-gemini', methods=['GET'])
+def test_gemini():
+    try:
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content("Hello, can you respond with a short greeting?")
+        return jsonify({
+            "response": response.text,
+            "status": "success"
+        })
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Gemini API Test Error: {e}\n{error_details}")
+        
+        return jsonify({
+            "error": f"Gemini API test failed: {str(e)}",
+            "status": "error"
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

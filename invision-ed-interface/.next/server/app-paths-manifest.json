@@ -1,11 +1,4 @@
 {
-  "/api/reading-status/route": "app/api/reading-status/route.js",
-  "/api/read-aloud/route": "app/api/read-aloud/route.js",
-  "/api/summarize-text/route": "app/api/summarize-text/route.js",
-  "/api/adjust-volume/route": "app/api/adjust-volume/route.js",
-  "/api/stop-reading/route": "app/api/stop-reading/route.js",
-  "/_not-found/page": "app/_not-found/page.js",
   "/api/process-file/route": "app/api/process-file/route.js",
-  "/api/summarize-and-read/route": "app/api/summarize-and-read/route.js",
   "/page": "app/page.js"
 }

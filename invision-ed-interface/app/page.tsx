@@ -268,22 +268,75 @@ export default function InVisionEdInterface() {
     setIsSummarizing(true);
     
     try {
-      const response = await fetch('/api/summarize-text');
-      
-      if (!response.ok) {
-        throw new Error('Failed to summarize text');
-      }
-      
-      const data = await response.json();
-      
-      // Add AI response with summary
-      const aiMessage: ChatMessage = {
+      // Add a message to show we're processing
+      const processingMessage: ChatMessage = {
         id: Date.now(),
         type: "ai",
-        message: `Here's a summary of the document:\n\n${data.summary}`,
+        message: "I'm generating a summary of the document. This might take a moment...",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setChatMessages((prev) => [...prev, processingMessage]);
+      
+      // Get document text from the most recent AI message
+      const documentText = chatMessages
+        .filter(msg => msg.type === "ai" && msg.message.includes("I've analyzed your file"))
+        .pop()?.message.split("found:\n\n")[1] || "";
+      
+      if (!documentText) {
+        throw new Error("No document content found to summarize.");
       }
-      setChatMessages((prev) => [...prev, aiMessage]);
+      
+      // Use the direct Gemini API with the provided API key
+      const GEMINI_API_KEY = "AIzaSyC8EHY_xcWwh600B9pvtYX2maXkXV--BiQ";
+      
+      const prompt = `Please provide a concise, well-structured summary of the following text extracted from a document. 
+Focus on the key points, main arguments, and conclusions. Use markdown formatting for better readability.
+
+TEXT:
+"""
+${documentText.substring(0, 30000)}
+"""`;
+      
+      interface GeminiMessage {
+        role: string;
+        parts: {text: string}[];
+      }
+      
+      let chatHistory: GeminiMessage[] = [{ role: "user", parts: [{ text: prompt }] }];
+      const payload = { contents: chatHistory };
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `API request failed with status ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Extract summary from the API response
+      if (result.candidates && result.candidates.length > 0 && result.candidates[0].content.parts[0].text) {
+        const summary = result.candidates[0].content.parts[0].text;
+        
+        // Add AI response with summary
+        const aiMessage: ChatMessage = {
+          id: Date.now() + 1,
+          type: "ai",
+          message: `Here's a summary of the document:\n\n${summary}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        };
+        setChatMessages((prev) => {
+          // Remove the processing message and add the summary message
+          return [...prev.filter(msg => msg.id !== processingMessage.id), aiMessage];
+        });
+      } else {
+        throw new Error('No valid content received from Gemini API.');
+      }
     } catch (error) {
       console.error('Error summarizing text:', error);
       
@@ -291,9 +344,9 @@ export default function InVisionEdInterface() {
       const errorMessage: ChatMessage = {
         id: Date.now(),
         type: "ai",
-        message: "I'm sorry, I couldn't summarize the text. Please try again.",
+        message: `I'm sorry, I couldn't summarize the text. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      }
+      };
       setChatMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsSummarizing(false);
